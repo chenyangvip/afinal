@@ -23,6 +23,7 @@ import java.io.IOException;
 import net.tsz.afinal.bitmap.download.Downloader;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 
 public class BitmapProcess {
@@ -105,7 +106,70 @@ public class BitmapProcess {
 		}
 		return bitmap;
 	}
+	/**
+	 * 下载网络的原图，不做任何处理
+	 * @param data
+	 * @return
+	 */
+	public Bitmap processBitmap(String data) {
+		final String key = FileNameGenerator.generator(data);
+		FileDescriptor fileDescriptor = null;
+		FileInputStream fileInputStream = null;
+		LruDiskCache.Snapshot snapshot;
+		synchronized (mHttpDiskCacheLock) {
+			// Wait for disk cache to initialize
+			while (mHttpDiskCacheStarting) {
+				try {
+					mHttpDiskCacheLock.wait();
+				} catch (InterruptedException e) {
+				}
+			}
 
+			if (mOriginalDiskCache != null) {
+				try {
+					snapshot = mOriginalDiskCache.get(key);
+					if (snapshot == null) {
+						LruDiskCache.Editor editor = mOriginalDiskCache.edit(key);
+						if (editor != null) {
+							if (downloader.downloadToLocalStreamByUrl(data,editor.newOutputStream(DISK_CACHE_INDEX))) {
+								editor.commit();
+							} else {
+								editor.abort();
+							}
+						}
+						snapshot = mOriginalDiskCache.get(key);
+					}
+					if (snapshot != null) {
+						fileInputStream = (FileInputStream) snapshot.getInputStream(DISK_CACHE_INDEX);
+						fileDescriptor = fileInputStream.getFD();
+					}
+				} catch (IOException e) {
+					Log.e(TAG, "processBitmap - " + e);
+				} catch (IllegalStateException e) {
+					Log.e(TAG, "processBitmap - " + e);
+				} finally {
+					if (fileDescriptor == null && fileInputStream != null) {
+						try {
+							fileInputStream.close();
+						} catch (IOException e) {
+						}
+					}
+				}
+			}
+		}
+
+		Bitmap bitmap = null;
+		if (fileDescriptor != null) {
+			bitmap =BitmapFactory.decodeFileDescriptor(fileDescriptor);
+		}
+		if (fileInputStream != null) {
+			try {
+				fileInputStream.close();
+			} catch (IOException e) {
+			}
+		}
+		return bitmap;
+	}
 	public void initHttpDiskCache() {
 		if (!mOriginalCacheDir.exists()) {
 			mOriginalCacheDir.mkdirs();
