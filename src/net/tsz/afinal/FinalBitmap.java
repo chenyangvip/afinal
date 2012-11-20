@@ -58,20 +58,19 @@ public class FinalBitmap {
 	}
 
 	public void downloadImage(OnImageDownloadListener listener, String url) {
-		
-		if(listener==null||TextUtils.isEmpty(url)){
+
+		if (listener == null || TextUtils.isEmpty(url)) {
 			return;
 		}
-		
+
 		Bitmap bitmap = null;
 
 		if (mImageCache != null) {
-			bitmap = mImageCache.getBitmapFromMemCache(url);
+			bitmap = mImageCache.get(url);
 		}
-
 		if (bitmap != null) {
 			listener.imageDownloaded(true, bitmap);
-		}else{
+		} else {
 			final BitmapDownloadTask task = new BitmapDownloadTask(listener,
 					url);
 			bitmapLoadAndDisplayExecutor.submit(task);
@@ -274,7 +273,7 @@ public class FinalBitmap {
 		}
 		if (mConfig.diskCacheSize > 1024 * 1024 * 5)
 			imageCacheParams.setDiskCacheSize(mConfig.diskCacheSize);
-		mImageCache = new BitmapCache(imageCacheParams);
+		mImageCache = new BitmapCache(imageCacheParams, mContext);
 
 		bitmapLoadAndDisplayExecutor = Executors.newFixedThreadPool(
 				mConfig.poolSize, new ThreadFactory() {
@@ -352,7 +351,7 @@ public class FinalBitmap {
 		Bitmap bitmap = null;
 
 		if (mImageCache != null) {
-			bitmap = mImageCache.getBitmapFromMemCache(uri);
+			bitmap = mImageCache.get(uri);
 		}
 
 		if (bitmap != null) {
@@ -401,20 +400,7 @@ public class FinalBitmap {
 		}
 	}
 
-	private void flushCacheInternal() {
-		if (mImageCache != null) {
-			mImageCache.flush();
-		}
-		if (mConfig != null && mConfig.bitmapProcess != null) {
-			mConfig.bitmapProcess.flushCacheInternal();
-		}
-	}
-
 	private void closeCacheInternal() {
-		if (mImageCache != null) {
-			mImageCache.close();
-			mImageCache = null;
-		}
 		if (mConfig != null && mConfig.bitmapProcess != null) {
 			mConfig.bitmapProcess.clearCacheInternal();
 		}
@@ -560,7 +546,7 @@ public class FinalBitmap {
 			public void handleMessage(Message msg) {
 				switch (msg.what) {
 				case 0:// 加载成功
-					final Bitmap bm = mImageCache.getBitmapFromMemCache(uriData
+					final Bitmap bm = mImageCache.get(uriData
 							.toString());
 					final ImageView iv = getAttachedImageView();
 					if (iv != null && bm != null) {
@@ -605,7 +591,7 @@ public class FinalBitmap {
 
 			if (mImageCache != null && getAttachedImageView() != null
 					&& !mExitTasksEarly) {
-				bitmap = mImageCache.getBitmapFromDiskCache(uriData);
+				bitmap = mImageCache.get(uriData);
 			}
 
 			if (bitmap == null && getAttachedImageView() != null
@@ -614,7 +600,7 @@ public class FinalBitmap {
 			}
 
 			if (bitmap != null && mImageCache != null) {
-				mImageCache.addBitmapToCache(uriData, bitmap);
+				mImageCache.put(uriData, bitmap);
 				mhander.sendEmptyMessage(0);
 			} else {
 				mhander.sendEmptyMessage(1);
@@ -645,7 +631,9 @@ public class FinalBitmap {
 			public void handleMessage(Message msg) {
 				switch (msg.what) {
 				case 0:
-					listener.imageDownloaded(true, bitmap);
+					final Bitmap bm = mImageCache.get(url
+							.toString());
+					listener.imageDownloaded(true, bm);
 					break;
 				case 1:
 					listener.imageDownloaded(false, null);
@@ -675,15 +663,14 @@ public class FinalBitmap {
 			}
 
 			if (mImageCache != null && !mExitTasksEarly) {
-				bitmap = mImageCache.getBitmapFromDiskCache(url);
+				bitmap = mImageCache.get(url);
 			}
-
 			if (bitmap == null && !mExitTasksEarly) {
 				bitmap = processBitmap(url);
 			}
 
 			if (bitmap != null && mImageCache != null) {
-				mImageCache.addBitmapToCache(url, bitmap);
+				mImageCache.put(url, bitmap);
 				mHandler.sendEmptyMessage(0);
 			} else {
 				mHandler.sendEmptyMessage(1);
@@ -717,7 +704,6 @@ public class FinalBitmap {
 				initDiskCacheInternal();
 				break;
 			case MESSAGE_FLUSH:
-				flushCacheInternal();
 				break;
 			case MESSAGE_CLOSE:
 				closeCacheInternal();
@@ -772,7 +758,7 @@ public class FinalBitmap {
 			if (displayer == null)
 				displayer = new SimpleDisplayer();
 
-			bitmapProcess = new BitmapProcess(downloader, cachePath,
+			bitmapProcess = new BitmapProcess(mContext, downloader,
 					originalDiskCache);
 		}
 

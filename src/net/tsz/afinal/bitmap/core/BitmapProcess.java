@@ -19,9 +19,12 @@ import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
+import net.tsz.afinal.bitmap.core.BitmapCache.ImageCacheParams;
 import net.tsz.afinal.bitmap.download.Downloader;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
@@ -32,26 +35,24 @@ public class BitmapProcess {
 	private int cacheSize;
 	private static final int DEFAULT_CACHE_SIZE = 20 * 1024 * 1024; // 20MB
 
-	private LruDiskCache mOriginalDiskCache;//原始图片的路径，不进行任何的压缩操作
+	private LruDiskCache mOriginalDiskCache;// 原始图片的路径，不进行任何的压缩操作
 	private final Object mHttpDiskCacheLock = new Object();
 	private static final int DISK_CACHE_INDEX = 0;
 
-	private File mOriginalCacheDir;
 	private Downloader downloader;
+	private Context mContext;
 
-	public BitmapProcess(Downloader downloader,String filePath,int cacheSize) {
-		this.mOriginalCacheDir = new File(filePath+"/original");
+	public BitmapProcess(Context context, Downloader downloader, int cacheSize) {
+		this.mContext = context;
 		this.downloader = downloader;
-		if(cacheSize<=0)
+		if (cacheSize <= 0)
 			cacheSize = DEFAULT_CACHE_SIZE;
 		this.cacheSize = cacheSize;
 	}
 
 	public Bitmap processBitmap(String data, BitmapDisplayConfig config) {
 		final String key = FileNameGenerator.generator(data);
-		FileDescriptor fileDescriptor = null;
-		FileInputStream fileInputStream = null;
-		LruDiskCache.Snapshot snapshot;
+		Bitmap bitmap = null;
 		synchronized (mHttpDiskCacheLock) {
 			// Wait for disk cache to initialize
 			while (mHttpDiskCacheStarting) {
@@ -62,60 +63,34 @@ public class BitmapProcess {
 			}
 
 			if (mOriginalDiskCache != null) {
+				OutputStream out = mOriginalDiskCache.getOutputStream(key);
+
 				try {
-					snapshot = mOriginalDiskCache.get(key);
-					if (snapshot == null) {
-						LruDiskCache.Editor editor = mOriginalDiskCache.edit(key);
-						if (editor != null) {
-							if (downloader.downloadToLocalStreamByUrl(data,editor.newOutputStream(DISK_CACHE_INDEX))) {
-								editor.commit();
-							} else {
-								editor.abort();
-							}
-						}
-						snapshot = mOriginalDiskCache.get(key);
+
+					if (downloader.downloadToLocalStreamByUrl(data, out)) {
+						bitmap = mOriginalDiskCache.get(key);
+					} else {
+						return null;
 					}
-					if (snapshot != null) {
-						fileInputStream = (FileInputStream) snapshot.getInputStream(DISK_CACHE_INDEX);
-						fileDescriptor = fileInputStream.getFD();
-					}
-				} catch (IOException e) {
+
+				} catch (Exception e) {
 					Log.e(TAG, "processBitmap - " + e);
-				} catch (IllegalStateException e) {
-					Log.e(TAG, "processBitmap - " + e);
-				} finally {
-					if (fileDescriptor == null && fileInputStream != null) {
-						try {
-							fileInputStream.close();
-						} catch (IOException e) {
-						}
-					}
 				}
 			}
 		}
 
-		Bitmap bitmap = null;
-		if (fileDescriptor != null) {
-			bitmap = BitmapDecoder.decodeSampledBitmapFromDescriptor(fileDescriptor, config.getBitmapWidth(),config.getBitmapHeight());
-		}
-		if (fileInputStream != null) {
-			try {
-				fileInputStream.close();
-			} catch (IOException e) {
-			}
-		}
 		return bitmap;
 	}
+
 	/**
 	 * 下载网络的原图，不做任何处理
+	 * 
 	 * @param data
 	 * @return
 	 */
 	public Bitmap processBitmap(String data) {
 		final String key = FileNameGenerator.generator(data);
-		FileDescriptor fileDescriptor = null;
-		FileInputStream fileInputStream = null;
-		LruDiskCache.Snapshot snapshot;
+		Bitmap bitmap = null;
 		synchronized (mHttpDiskCacheLock) {
 			// Wait for disk cache to initialize
 			while (mHttpDiskCacheStarting) {
@@ -126,61 +101,30 @@ public class BitmapProcess {
 			}
 
 			if (mOriginalDiskCache != null) {
+				OutputStream out = mOriginalDiskCache.getOutputStream(key);
 				try {
-					snapshot = mOriginalDiskCache.get(key);
-					if (snapshot == null) {
-						LruDiskCache.Editor editor = mOriginalDiskCache.edit(key);
-						if (editor != null) {
-							if (downloader.downloadToLocalStreamByUrl(data,editor.newOutputStream(DISK_CACHE_INDEX))) {
-								editor.commit();
-							} else {
-								editor.abort();
-							}
-						}
-						snapshot = mOriginalDiskCache.get(key);
+					if (downloader.downloadToLocalStreamByUrl(data, out)) {
+						bitmap = mOriginalDiskCache.get(key);
+					} else {
+						return null;
 					}
-					if (snapshot != null) {
-						fileInputStream = (FileInputStream) snapshot.getInputStream(DISK_CACHE_INDEX);
-						fileDescriptor = fileInputStream.getFD();
-					}
-				} catch (IOException e) {
-					Log.e(TAG, "processBitmap - " + e);
-				} catch (IllegalStateException e) {
-					Log.e(TAG, "processBitmap - " + e);
-				} finally {
-					if (fileDescriptor == null && fileInputStream != null) {
-						try {
-							fileInputStream.close();
-						} catch (IOException e) {
-						}
-					}
-				}
-			}
-		}
 
-		Bitmap bitmap = null;
-		if (fileDescriptor != null) {
-			bitmap =BitmapFactory.decodeFileDescriptor(fileDescriptor);
-		}
-		if (fileInputStream != null) {
-			try {
-				fileInputStream.close();
-			} catch (IOException e) {
+				} catch (Exception e) {
+					Log.e(TAG, "processBitmap - " + e);
+				}
 			}
 		}
 		return bitmap;
 	}
+
 	public void initHttpDiskCache() {
-		if (!mOriginalCacheDir.exists()) {
-			mOriginalCacheDir.mkdirs();
-		}
 		synchronized (mHttpDiskCacheLock) {
-			if (BitmapCommonUtils.getUsableSpace(mOriginalCacheDir) > cacheSize) {
-				try {
-					mOriginalDiskCache = LruDiskCache.open(mOriginalCacheDir, 1, 1,cacheSize);
-				} catch (IOException e) {
-					mOriginalDiskCache = null;
-				}
+			try {
+				ImageCacheParams imageParams=new ImageCacheParams(BitmapCommonUtils.getDiskCacheDir(mContext,
+								"afinalCache"));
+				mOriginalDiskCache = LruDiskCache.openCache(imageParams);
+			} catch (Exception e) {
+				mOriginalDiskCache = null;
 			}
 			mHttpDiskCacheStarting = false;
 			mHttpDiskCacheLock.notifyAll();
@@ -189,10 +133,10 @@ public class BitmapProcess {
 
 	public void clearCacheInternal() {
 		synchronized (mHttpDiskCacheLock) {
-			if (mOriginalDiskCache != null && !mOriginalDiskCache.isClosed()) {
+			if (mOriginalDiskCache != null) {
 				try {
-					mOriginalDiskCache.delete();
-				} catch (IOException e) {
+					mOriginalDiskCache.clearCache();
+				} catch (Exception e) {
 					Log.e(TAG, "clearCacheInternal - " + e);
 				}
 				mOriginalDiskCache = null;
@@ -201,33 +145,4 @@ public class BitmapProcess {
 			}
 		}
 	}
-
-	public void flushCacheInternal() {
-		synchronized (mHttpDiskCacheLock) {
-			if (mOriginalDiskCache != null) {
-				try {
-					mOriginalDiskCache.flush();
-				} catch (IOException e) {
-					Log.e(TAG, "flush - " + e);
-				}
-			}
-		}
-	}
-
-	public void closeCacheInternal() {
-		synchronized (mHttpDiskCacheLock) {
-			if (mOriginalDiskCache != null) {
-				try {
-					if (!mOriginalDiskCache.isClosed()) {
-						mOriginalDiskCache.close();
-						mOriginalDiskCache = null;
-					}
-				} catch (IOException e) {
-					Log.e(TAG, "closeCacheInternal - " + e);
-				}
-			}
-		}
-	}
-	
-	
 }
