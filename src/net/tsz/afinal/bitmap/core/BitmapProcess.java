@@ -108,7 +108,6 @@ public class BitmapProcess {
 					} else {
 						return null;
 					}
-
 				} catch (Exception e) {
 					Log.e(TAG, "processBitmap - " + e);
 				}

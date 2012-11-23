@@ -17,6 +17,8 @@ package net.tsz.afinal.bitmap.core;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import android.graphics.Bitmap;
 import android.os.Handler;
@@ -34,6 +36,8 @@ public class LruMemoryCache<K, V> implements Cache<K, V> {
 
 	private final Object mMenoryCacheLock = new Object();
 
+	private Pattern pattern;
+
 	/**
 	 * @param maxSize
 	 *            for caches that do not override {@link #sizeOf}, this is the
@@ -49,6 +53,7 @@ public class LruMemoryCache<K, V> implements Cache<K, V> {
 		this.maxSize = maxSize;
 		this.map = new LinkedHashMap<K, V>(0, 0.75f, true);
 		this.mDiskLruCache = mDiskLruCache;
+		pattern = Pattern.compile("[0-9]+");
 	}
 
 	/**
@@ -74,17 +79,6 @@ public class LruMemoryCache<K, V> implements Cache<K, V> {
 		}
 		synchronized (mMenoryCacheLock) {
 			map.put(key, value);
-			if (value instanceof Bitmap && key instanceof String) {
-				final Bitmap bitmap = (Bitmap) value;
-				mHandler.post(new Runnable() {
-					@Override
-					public void run() {
-						if(!mDiskLruCache.exists((String)key)){
-							mDiskLruCache.put((String) key, bitmap);
-						}
-					}
-				});
-			}
 			size += safeSizeOf(key, value);
 			trimToSize();
 		}
@@ -100,14 +94,17 @@ public class LruMemoryCache<K, V> implements Cache<K, V> {
 			size -= safeSizeOf(key, value);
 			if (value instanceof Bitmap && key instanceof String) {
 				final Bitmap bitmap = (Bitmap) value;
-				mHandler.post(new Runnable() {
-					@Override
-					public void run() {
-						if(!mDiskLruCache.exists((String)key)){
-							mDiskLruCache.put((String) key, bitmap);
+				Matcher matcher = pattern.matcher((String) key);
+				if (!matcher.matches()) {
+					mHandler.post(new Runnable() {
+						@Override
+						public void run() {
+							if (!mDiskLruCache.exists((String) key)) {
+								mDiskLruCache.put((String) key, bitmap);
+							}
 						}
-					}
-				});
+					});
+				}
 			}
 			map.remove(key);
 		}
@@ -120,10 +117,11 @@ public class LruMemoryCache<K, V> implements Cache<K, V> {
 		}
 		synchronized (mMenoryCacheLock) {
 			V value = map.get(key);
-			if(null==value){
-				mDiskLruCache.exists((String)key);
-				value=(V)mDiskLruCache.get((String)key);
-				
+			if (null == value) {
+				boolean isExists=mDiskLruCache.exists((String) key);
+				if(isExists){
+					value = (V) mDiskLruCache.get((String) key);
+				}
 			}
 			return value;
 		}
@@ -139,7 +137,7 @@ public class LruMemoryCache<K, V> implements Cache<K, V> {
 			V oldValue = map.get(key);
 			size -= safeSizeOf(key, oldValue);
 			map.remove(key);
-			if (oldValue instanceof Bitmap ) {
+			if (oldValue instanceof Bitmap) {
 				Bitmap map = (Bitmap) oldValue;
 				if (!map.isRecycled()) {
 					map.recycle();
@@ -160,7 +158,7 @@ public class LruMemoryCache<K, V> implements Cache<K, V> {
 				while (map.size() > 0) {
 					final K entry = map.keySet().iterator().next();
 					V value = map.get(entry);
-					if (value instanceof Bitmap&& entry instanceof String) {
+					if (value instanceof Bitmap && entry instanceof String) {
 						final Bitmap bitmap = (Bitmap) value;
 						mHandler.post(new Runnable() {
 							@Override

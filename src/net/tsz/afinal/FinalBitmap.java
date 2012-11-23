@@ -44,7 +44,6 @@ import net.tsz.afinal.bitmap.download.Downloader;
 import net.tsz.afinal.bitmap.download.SimpleHttpDownloader;
 
 public class FinalBitmap {
-
 	private FinalBitmapConfig mConfig;
 	private BitmapCache mImageCache;
 
@@ -89,6 +88,21 @@ public class FinalBitmap {
 				"afinalCache"));// 配置缓存路径
 		configDisplayer(new SimpleDisplayer());// 配置显示器
 		configDownlader(new SimpleHttpDownloader());// 配置下载器
+	}
+	
+	
+	public Bitmap decodeResource(int resId){
+		Bitmap bitmap=null;
+		if(null!=mImageCache){
+			bitmap=mImageCache.get(String.valueOf(resId));
+		}
+		if(bitmap==null){
+			bitmap=BitmapFactory.decodeResource(mContext.getResources(), resId);
+			if(null!=mImageCache){
+				mImageCache.put(String.valueOf(resId), bitmap);
+			}
+		}
+		return bitmap;
 	}
 
 	/**

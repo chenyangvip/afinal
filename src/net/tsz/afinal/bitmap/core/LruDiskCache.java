@@ -57,9 +57,10 @@ public class LruDiskCache<K, V> implements Cache<String, Bitmap> {
 	private final int maxCacheItemSize = 64; // 64 item default
 
 	private static ImageCacheParams mImageCacheParams;
-	private final Map<String, String> mLinkedHashMap =new LinkedHashMap<String, String>(
-					INITIAL_CAPACITY, LOAD_FACTOR, true);
-
+	private final Map<String, String> mLinkedHashMap = new LinkedHashMap<String, String>(
+			INITIAL_CAPACITY, LOAD_FACTOR, true);
+	
+	private static LruDiskCache mLruDiskCache;
 	/**
 	 * Used to fetch an instance of DiskLruCache.
 	 * 
@@ -68,8 +69,8 @@ public class LruDiskCache<K, V> implements Cache<String, Bitmap> {
 	 * @param maxByteSize
 	 * @return
 	 */
-	public static LruDiskCache openCache(
-			ImageCacheParams mCacheParams) {
+	public static LruDiskCache openCache(ImageCacheParams mCacheParams) {
+		if(null==mLruDiskCache){
 		if (!mCacheParams.diskCacheDir.exists()) {
 			mCacheParams.diskCacheDir.mkdir();
 		}
@@ -77,10 +78,11 @@ public class LruDiskCache<K, V> implements Cache<String, Bitmap> {
 		if (mCacheParams.diskCacheDir.isDirectory()
 				&& mCacheParams.diskCacheDir.canWrite()
 				&& BitmapCommonUtils.getUsableSpace(mCacheParams.diskCacheDir) > mCacheParams.diskCacheSize) {
-			return new LruDiskCache(mCacheParams.diskCacheDir);
+			mLruDiskCache=new LruDiskCache(mCacheParams.diskCacheDir);
 		}
-		setImageCacheParams(mCacheParams);
-		return null;
+			setImageCacheParams(mCacheParams);
+		}
+		return mLruDiskCache;
 	}
 
 	private static void setImageCacheParams(ImageCacheParams mCacheParams) {
@@ -350,7 +352,10 @@ public class LruDiskCache<K, V> implements Cache<String, Bitmap> {
 		boolean result = false;
 		result = mLinkedHashMap.containsKey(key);
 		if (!result) {
-			result= isInFloder(key);
+			result = isInFloder(key);
+		}
+		if(result){
+			mLinkedHashMap.put(key, createFilePath(key));
 		}
 		return result;
 	}
@@ -363,7 +368,7 @@ public class LruDiskCache<K, V> implements Cache<String, Bitmap> {
 				for (String name : fileNames) {
 					if (key.equals(name)) {
 						result = true;
-						
+
 					}
 				}
 			}
