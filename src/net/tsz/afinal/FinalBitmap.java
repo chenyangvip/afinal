@@ -15,6 +15,21 @@
  */
 package net.tsz.afinal;
 
+import java.io.File;
+import java.lang.ref.WeakReference;
+import java.util.HashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+
+import net.tsz.afinal.bitmap.core.BitmapCache;
+import net.tsz.afinal.bitmap.core.BitmapCommonUtils;
+import net.tsz.afinal.bitmap.core.BitmapDisplayConfig;
+import net.tsz.afinal.bitmap.core.BitmapProcess;
+import net.tsz.afinal.bitmap.display.Displayer;
+import net.tsz.afinal.bitmap.display.SimpleDisplayer;
+import net.tsz.afinal.bitmap.download.Downloader;
+import net.tsz.afinal.bitmap.download.SimpleHttpDownloader;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -27,21 +42,6 @@ import android.os.Message;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.widget.ImageView;
-
-import java.io.File;
-import java.lang.ref.WeakReference;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-
-import net.tsz.afinal.bitmap.core.BitmapCommonUtils;
-import net.tsz.afinal.bitmap.core.BitmapDisplayConfig;
-import net.tsz.afinal.bitmap.core.BitmapProcess;
-import net.tsz.afinal.bitmap.core.BitmapCache;
-import net.tsz.afinal.bitmap.display.Displayer;
-import net.tsz.afinal.bitmap.display.SimpleDisplayer;
-import net.tsz.afinal.bitmap.download.Downloader;
-import net.tsz.afinal.bitmap.download.SimpleHttpDownloader;
 
 public class FinalBitmap {
 	private FinalBitmapConfig mConfig;
@@ -306,49 +306,65 @@ public class FinalBitmap {
 		doDisplay(imageView, uri, null);
 	}
 
-	public void display(ImageView imageView, String uri, int imageWidth,
-			int imageHeight) {
-		BitmapDisplayConfig displayConfig = getDisplayConfig();
-		displayConfig.setBitmapHeight(imageHeight);
-		displayConfig.setBitmapWidth(imageWidth);
+	
 
-		doDisplay(imageView, uri, displayConfig);
+	public void display(ImageView imageView,String uri,int imageWidth,int imageHeight){
+		BitmapDisplayConfig displayConfig = configMap.get(imageWidth+"_"+imageHeight);
+		if(displayConfig==null){
+			displayConfig = getDisplayConfig();
+			displayConfig.setBitmapHeight(imageHeight);
+			displayConfig.setBitmapWidth(imageWidth);
+			configMap.put(imageWidth+"_"+imageHeight, displayConfig);
+		}
+		
+		doDisplay(imageView,uri,displayConfig);
 	}
-
-	public void display(ImageView imageView, String uri, Bitmap loadingBitmap) {
-		BitmapDisplayConfig displayConfig = getDisplayConfig();
-		displayConfig.setLoadingBitmap(loadingBitmap);
-
-		doDisplay(imageView, uri, displayConfig);
+	
+	public void display(ImageView imageView,String uri,Bitmap loadingBitmap){
+		BitmapDisplayConfig displayConfig = configMap.get(String.valueOf(loadingBitmap));
+		if(displayConfig==null){
+			displayConfig = getDisplayConfig();
+			displayConfig.setLoadingBitmap(loadingBitmap);
+			configMap.put(String.valueOf(loadingBitmap), displayConfig);
+		}
+		
+		doDisplay(imageView,uri,displayConfig);
 	}
-
-	public void display(ImageView imageView, String uri, Bitmap loadingBitmap,
-			Bitmap laodfailBitmap) {
-		BitmapDisplayConfig displayConfig = getDisplayConfig();
-		displayConfig.setLoadingBitmap(loadingBitmap);
-		displayConfig.setLoadfailBitmap(laodfailBitmap);
-
-		doDisplay(imageView, uri, displayConfig);
+	
+	
+	public void display(ImageView imageView,String uri,Bitmap loadingBitmap,Bitmap laodfailBitmap){
+		BitmapDisplayConfig displayConfig = configMap.get(String.valueOf(loadingBitmap)+"_"+String.valueOf(laodfailBitmap));
+		if(displayConfig==null){
+			displayConfig = getDisplayConfig();
+			displayConfig.setLoadingBitmap(loadingBitmap);
+			displayConfig.setLoadfailBitmap(laodfailBitmap);
+			configMap.put(String.valueOf(loadingBitmap)+"_"+String.valueOf(laodfailBitmap), displayConfig);
+		}
+		
+		doDisplay(imageView,uri,displayConfig);
 	}
-
-	public void display(ImageView imageView, String uri, int imageWidth,
-			int imageHeight, Bitmap loadingBitmap, Bitmap laodfailBitmap) {
-		BitmapDisplayConfig displayConfig = getDisplayConfig();
-		displayConfig.setBitmapHeight(imageHeight);
-		displayConfig.setBitmapWidth(imageWidth);
-		displayConfig.setLoadingBitmap(loadingBitmap);
-		displayConfig.setLoadfailBitmap(laodfailBitmap);
-
-		doDisplay(imageView, uri, displayConfig);
+	
+	public void display(ImageView imageView,String uri,int imageWidth,int imageHeight,Bitmap loadingBitmap,Bitmap laodfailBitmap){
+		BitmapDisplayConfig displayConfig = configMap.get(imageWidth+"_"+imageHeight+"_"+String.valueOf(loadingBitmap)+"_"+String.valueOf(laodfailBitmap));
+		if(displayConfig==null){
+			displayConfig = getDisplayConfig();
+			displayConfig.setBitmapHeight(imageHeight);
+			displayConfig.setBitmapWidth(imageWidth);
+			displayConfig.setLoadingBitmap(loadingBitmap);
+			displayConfig.setLoadfailBitmap(laodfailBitmap);
+			configMap.put(imageWidth+"_"+imageHeight+"_"+String.valueOf(loadingBitmap)+"_"+String.valueOf(laodfailBitmap), displayConfig);
+		}
+		
+		doDisplay(imageView,uri,displayConfig);
 	}
-
-	public void display(ImageView imageView, String uri,
-			BitmapDisplayConfig config) {
-		doDisplay(imageView, uri, config);
+	
+	
+	public void display( ImageView imageView,String uri,BitmapDisplayConfig config){
+		doDisplay(imageView,uri,config);
 	}
-
-	private void doDisplay(ImageView imageView, String uri,
-			BitmapDisplayConfig displayConfig) {
+	
+	
+	private void doDisplay(ImageView imageView, String uri, BitmapDisplayConfig displayConfig) {
 		if (TextUtils.isEmpty(uri) || imageView == null) {
 			return;
 		}
@@ -377,15 +393,16 @@ public class FinalBitmap {
 			bitmapLoadAndDisplayExecutor.submit(task);
 		}
 	}
-
-	private BitmapDisplayConfig getDisplayConfig() {
+	
+	private HashMap<String, BitmapDisplayConfig> configMap= new HashMap<String, BitmapDisplayConfig>();
+	
+	private BitmapDisplayConfig getDisplayConfig(){
 		BitmapDisplayConfig config = new BitmapDisplayConfig();
 		config.setAnimation(mConfig.defaultDisplayConfig.getAnimation());
 		config.setAnimationType(mConfig.defaultDisplayConfig.getAnimationType());
 		config.setBitmapHeight(mConfig.defaultDisplayConfig.getBitmapHeight());
 		config.setBitmapWidth(mConfig.defaultDisplayConfig.getBitmapWidth());
-		config.setLoadfailBitmap(mConfig.defaultDisplayConfig
-				.getLoadfailBitmap());
+		config.setLoadfailBitmap(mConfig.defaultDisplayConfig.getLoadfailBitmap());
 		config.setLoadingBitmap(mConfig.defaultDisplayConfig.getLoadingBitmap());
 		return config;
 	}
@@ -426,7 +443,32 @@ public class FinalBitmap {
 		}
 		return null;
 	}
-
+	
+	public void setExitTasksEarly(boolean exitTasksEarly) {
+		mExitTasksEarly = exitTasksEarly;
+	}
+	/**
+     * activity onResume的时候调用这个方法，让加载图片线程继续
+     */
+    public void onResume(){
+    	setExitTasksEarly(false);
+    }
+    
+    /**
+     * activity onPause的时候调用这个方法，让线程暂停
+     */
+    public void onPause() {
+        setExitTasksEarly(true);
+        flushCache();
+    }
+    
+    /**
+     * activity onDestroy的时候调用这个方法，释放缓存
+     */
+    public void onDestroy() {
+        closeCache();
+    }
+    
 	/**
 	 * 网络加载bitmap
 	 * 
@@ -720,7 +762,7 @@ public class FinalBitmap {
 			return null;
 		}
 	}
-
+	
 	/**
 	 * @title 配置信息
 	 * @description FinalBitmap的配置信息
