@@ -61,4 +61,8 @@ public class CachedImageView extends ImageView {
 			}
 		}, url);
 	}
+	@Override
+	public boolean isEnabled() {
+		return false;
+	}
 }

@@ -51,19 +51,15 @@ public class FinalBitmap {
 	private boolean mPauseWork = false;
 	private final Object mPauseWorkLock = new Object();
 	private Context mContext;
-
 	public interface OnImageDownloadListener {
 		public void imageDownloaded(boolean isSuccess, Bitmap bitmap);
 	}
 
-	public void downloadImage(OnImageDownloadListener listener, String url) {
-
+	public synchronized void downloadImage(OnImageDownloadListener listener, String url) {
 		if (listener == null || TextUtils.isEmpty(url)) {
 			return;
 		}
-
 		Bitmap bitmap = null;
-
 		if (mImageCache != null) {
 			bitmap = mImageCache.get(url);
 		}
@@ -268,7 +264,6 @@ public class FinalBitmap {
 	}
 
 	public FinalBitmap init() {
-
 		mConfig.init();
 
 		BitmapCache.ImageCacheParams imageCacheParams = new BitmapCache.ImageCacheParams(
@@ -301,7 +296,6 @@ public class FinalBitmap {
 
 		new CacheExecutecTask()
 				.execute(CacheExecutecTask.MESSAGE_INIT_DISK_CACHE);
-
 		return this;
 	}
 

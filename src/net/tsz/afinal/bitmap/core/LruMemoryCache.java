@@ -121,6 +121,7 @@ public class LruMemoryCache<K, V> implements Cache<K, V> {
 				boolean isExists=mDiskLruCache.exists((String) key);
 				if(isExists){
 					value = (V) mDiskLruCache.get((String) key);
+					put(key, value);//put the value in to memory cache
 				}
 			}
 			return value;

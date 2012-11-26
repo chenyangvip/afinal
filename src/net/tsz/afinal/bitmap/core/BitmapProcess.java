@@ -15,18 +15,12 @@
  */
 package net.tsz.afinal.bitmap.core;
 
-import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 
 import net.tsz.afinal.bitmap.core.BitmapCache.ImageCacheParams;
 import net.tsz.afinal.bitmap.download.Downloader;
-
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.util.Log;
 
 public class BitmapProcess {

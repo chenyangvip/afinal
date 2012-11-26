@@ -39,8 +39,6 @@ public class BitmapCache {
 	// Compression settings when writing images to disk cache
 	private static final CompressFormat DEFAULT_COMPRESS_FORMAT = CompressFormat.JPEG;
 	private static final int DEFAULT_COMPRESS_QUALITY = 70;
-	private static final int DISK_CACHE_INDEX = 0;
-
 	// Constants to easily toggle various caches
 	private static final boolean DEFAULT_MEM_CACHE_ENABLED = true;
 	private static final boolean DEFAULT_DISK_CACHE_ENABLED = true;
