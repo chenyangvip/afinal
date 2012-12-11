@@ -74,16 +74,167 @@ public class FinalBitmap {
 
 	private ExecutorService bitmapLoadAndDisplayExecutor;
 
-	// //////////////////////// config method
-	// start////////////////////////////////////
-	public FinalBitmap(Context context) {
+
+	private static FinalBitmap mFinalBitmap;
+	////////////////////////// config method start////////////////////////////////////
+	private FinalBitmap(Context context) {
 		mContext = context;
 		mConfig = new FinalBitmapConfig(context);
 
-		configDiskCachePath(BitmapCommonUtils.getDiskCacheDir(context,
-				"afinalCache"));// 配置缓存路径
-		configDisplayer(new SimpleDisplayer());// 配置显示器
-		configDownlader(new SimpleHttpDownloader());// 配置下载器
+		configDiskCachePath(BitmapCommonUtils.getDiskCacheDir(context, "afinalCache").getAbsolutePath());//配置缓存路径
+		configDisplayer(new SimpleDisplayer());//配置显示器
+		configDownlader(new SimpleHttpDownloader());//配置下载器
+	}
+
+	/**
+	 * 创建finalbitmap
+	 * @param ctx
+	 * @return
+	 */
+	public static FinalBitmap create(Context ctx){
+		if(mFinalBitmap == null){
+			mFinalBitmap = new FinalBitmap(ctx.getApplicationContext());
+			mFinalBitmap.init();
+		}
+		return mFinalBitmap;
+	}
+
+	/**
+	 * 创建finalBitmap
+	 * @param ctx
+	 * @param diskCachePath 磁盘缓存路径
+	 * @return
+	 */
+	public static FinalBitmap create(Context ctx,String diskCachePath){
+		if(mFinalBitmap == null){
+			mFinalBitmap = new FinalBitmap(ctx.getApplicationContext());
+			mFinalBitmap.configDiskCachePath(diskCachePath);
+			mFinalBitmap.init();
+		}
+		return mFinalBitmap;
+
+	}
+
+
+	/**
+	 * 创建finalBitmap
+	 * @param ctx
+	 * @param diskCachePath 磁盘缓存路径
+	 * @param memoryCacheSizePercent 缓存大小在当前进程的百分比（0.05-0.8之间）
+	 * @return
+	 */
+	public static FinalBitmap create(Context ctx,String diskCachePath,float memoryCacheSizePercent){
+		if(mFinalBitmap == null){
+			mFinalBitmap = new FinalBitmap(ctx.getApplicationContext());
+			mFinalBitmap.configDiskCachePath(diskCachePath);
+			mFinalBitmap.configMemoryCachePercent(memoryCacheSizePercent);
+			mFinalBitmap.init();
+		}
+
+		return mFinalBitmap;
+	}
+
+	/**
+	 * 创建finalBitmap
+	 * @param ctx
+	 * @param diskCachePath 磁盘缓存路径
+	 * @param memoryCacheSize 内存缓存大小
+	 * @return
+	 */
+	public static FinalBitmap create(Context ctx,String diskCachePath,int memoryCacheSize){
+		if(mFinalBitmap == null){
+			mFinalBitmap = new FinalBitmap(ctx.getApplicationContext());
+			mFinalBitmap.configDiskCachePath(diskCachePath);
+			mFinalBitmap.configMemoryCacheSize(memoryCacheSize);
+			mFinalBitmap.init();
+		}
+
+		return mFinalBitmap;
+	}
+
+
+	/**
+	 * 创建finalBitmap
+	 * @param ctx
+	 * @param diskCachePath 磁盘缓存路径
+	 * @param memoryCacheSizePercent 缓存大小在当前进程的百分比（0.05-0.8之间）
+	 * @param threadSize 线程并发数量
+	 * @return
+	 */
+	public static FinalBitmap create(Context ctx,String diskCachePath,float memoryCacheSizePercent,int threadSize){
+		if(mFinalBitmap == null){
+			mFinalBitmap = new FinalBitmap(ctx.getApplicationContext());
+			mFinalBitmap.configDiskCachePath(diskCachePath);
+			mFinalBitmap.configBitmapLoadThreadSize(threadSize);
+			mFinalBitmap.configMemoryCachePercent(memoryCacheSizePercent);
+			mFinalBitmap.init();
+		}
+
+		return mFinalBitmap;
+	}
+
+	/**
+	 * 创建finalBitmap
+	 * @param ctx
+	 * @param diskCachePath 磁盘缓存路径
+	 * @param memoryCacheSize 内存缓存大小
+	 * @param threadSize 线程并发数量
+	 * @return
+	 */
+	public static FinalBitmap create(Context ctx,String diskCachePath,int memoryCacheSize,int threadSize){
+		if(mFinalBitmap == null){
+			mFinalBitmap = new FinalBitmap(ctx.getApplicationContext());
+			mFinalBitmap.configDiskCachePath(diskCachePath);
+			mFinalBitmap.configBitmapLoadThreadSize(threadSize);
+			mFinalBitmap.configMemoryCacheSize(memoryCacheSize);
+			mFinalBitmap.init();
+		}
+
+		return mFinalBitmap;
+	}
+
+	/**
+	 * 创建finalBitmap
+	 * @param ctx
+	 * @param diskCachePath 磁盘缓存路径
+	 * @param memoryCacheSizePercent 缓存大小在当前进程的百分比（0.05-0.8之间）
+	 * @param diskCacheSize 磁盘缓存大小
+	 * @param threadSize 线程并发数量
+	 * @return
+	 */
+	public static FinalBitmap create(Context ctx,String diskCachePath,float memoryCacheSizePercent,int diskCacheSize,int threadSize){
+		if(mFinalBitmap == null){
+			mFinalBitmap = new FinalBitmap(ctx.getApplicationContext());
+			mFinalBitmap.configDiskCachePath(diskCachePath);
+			mFinalBitmap.configBitmapLoadThreadSize(threadSize);
+			mFinalBitmap.configMemoryCachePercent(memoryCacheSizePercent);
+			mFinalBitmap.configDiskCacheSize(diskCacheSize);
+			mFinalBitmap.init();
+		}
+
+		return mFinalBitmap;
+	}
+
+	/**
+	 * 创建finalBitmap
+	 * @param ctx
+	 * @param diskCachePath 磁盘缓存路径
+	 * @param memoryCacheSize 内存缓存大小
+	 * @param diskCacheSize 磁盘缓存大小
+	 * @param threadSize 线程并发数量
+	 * @return
+	 */
+	public static FinalBitmap create(Context ctx,String diskCachePath,int memoryCacheSize,int diskCacheSize,int threadSize){
+		if(mFinalBitmap == null){
+			mFinalBitmap = new FinalBitmap(ctx.getApplicationContext());
+			mFinalBitmap.configDiskCachePath(diskCachePath);
+			mFinalBitmap.configBitmapLoadThreadSize(threadSize);
+			mFinalBitmap.configMemoryCacheSize(memoryCacheSize);
+			mFinalBitmap.configDiskCacheSize(diskCacheSize);
+			mFinalBitmap.init();
+		}
+
+		return mFinalBitmap;
 	}
 	
 	

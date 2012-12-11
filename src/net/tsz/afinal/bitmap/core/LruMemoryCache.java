@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
 
 import android.graphics.Bitmap;
 import android.os.Handler;
-import android.os.Message;
 
 public class LruMemoryCache<K, V> implements Cache<K, V> {
 	private final LinkedHashMap<K, V> map;
@@ -31,7 +30,7 @@ public class LruMemoryCache<K, V> implements Cache<K, V> {
 	private int size;
 	private int maxSize;
 	private LruDiskCache<String, Bitmap> mDiskLruCache;
-
+	
 	private Handler mHandler = new Handler();
 
 	private final Object mMenoryCacheLock = new Object();
