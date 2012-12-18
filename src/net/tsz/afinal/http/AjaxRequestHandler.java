@@ -103,7 +103,7 @@ public class  AjaxRequestHandler extends  AsyncTask<Object, Object, Object> {
 			
 			makeRequestWithRetries((HttpUriRequest)params[0]);
 			
-			publishProgress(Update_failure,null,null); // 结束
+			publishProgress(Update_end,null,null); // 结束
 		} catch (IOException e) {
 			publishProgress(Update_failure,e,null); // 结束
 		}
@@ -115,7 +115,7 @@ public class  AjaxRequestHandler extends  AsyncTask<Object, Object, Object> {
 	private final static int Update_loading = 2;
 	private final static int Update_failure = 3;
 	private final static int Update_success = 4;
-
+	private final static int Update_end=5;
 	@SuppressWarnings("unchecked")
 	@Override
 	protected void onProgressUpdate(Object... values) {
@@ -137,6 +137,10 @@ public class  AjaxRequestHandler extends  AsyncTask<Object, Object, Object> {
 			if(callback!=null)
 				callback.onSuccess(values[1]);
 			break;
+		case Update_end:
+			if(null!=callback){
+				callback.onEnd();
+			}
 		default:
 			break;
 		}
