@@ -19,6 +19,7 @@ import java.io.OutputStream;
 
 import net.tsz.afinal.bitmap.core.BitmapCache.ImageCacheParams;
 import net.tsz.afinal.bitmap.download.Downloader;
+import net.tsz.afinal.core.FileNameGenerator;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.util.Log;

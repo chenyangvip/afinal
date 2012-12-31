@@ -19,7 +19,8 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 
-import net.tsz.afinal.common.AsyncTask;
+import net.tsz.afinal.FinalHttp.ContentFilter;
+import net.tsz.afinal.core.AsyncTask;
 import net.tsz.afinal.http.entityhandler.EntityCallBack;
 import net.tsz.afinal.http.entityhandler.FileEntityHandler;
 import net.tsz.afinal.http.entityhandler.StringEntityHandler;
@@ -47,11 +48,18 @@ public class  AjaxRequestHandler extends  AsyncTask<Object, Object, Object> {
 	
 	@SuppressWarnings("rawtypes")
 	private final AjaxCallBack callback;
-	
+	private ContentFilter mFilter;
 	private int executionCount = 0;
 	private String targetUrl = null;
 	private String charset;
 
+	public AjaxRequestHandler(AbstractHttpClient client, HttpContext context, AjaxCallBack<?> callback,String charset,ContentFilter filter) {
+		this.client = client;
+		this.context = context;
+		this.callback = callback;
+		this.charset = charset;
+		this.mFilter=filter;
+	}
 	public AjaxRequestHandler(AbstractHttpClient client, HttpContext context, AjaxCallBack<?> callback,String charset) {
 		this.client = client;
 		this.context = context;
@@ -137,14 +145,16 @@ public class  AjaxRequestHandler extends  AsyncTask<Object, Object, Object> {
 		case Update_success:
 			if(callback!=null)
 				if(values[1] instanceof String){
-					String returnBack=(String)values[1];
-					if(!(returnBack.toLowerCase().contains("<html>")||returnBack.toLowerCase().contains("<body>"))){
-						callback.onSuccess(values[1]);
-					}else{
-						callback.onFailure(new Throwable("Donn't support text"),"not started with { or {[");
+					if(null!=mFilter){
+						String returnBack=(String)values[1];
+						if(mFilter.isFilted(returnBack)){
+							callback.onSuccess(values[1]);
+						}else{
+							callback.onFailure(new Throwable("Donn't support text"),"not started with { or {[");
+							callback.onErrorFormat("Donn't support text not started with { or {[");
+						}
 					}
 				}
-				
 			break;
 		case Update_end:
 			if(null!=callback){

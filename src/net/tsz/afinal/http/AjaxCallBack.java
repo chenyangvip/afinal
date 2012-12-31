@@ -55,4 +55,9 @@ public abstract class AjaxCallBack<T> {
 	public void onSuccess(T t){};
 	public void onFailure(Throwable t,String strMsg){};
 	public void onEnd(){};
+	/**
+	 * only when you set ContentFilter ,this method could be excuted
+	 * @param note
+	 */
+	public void onErrorFormat(String note){};
 }

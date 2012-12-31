@@ -15,17 +15,13 @@
  */
 package net.tsz.afinal.bitmap.core;
 
+import java.io.File;
+
+import net.tsz.afinal.core.FileNameGenerator;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
-import android.graphics.BitmapFactory;
-import android.util.Log;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 public class BitmapCache {
 	private static final String TAG = "ImageCache";

@@ -41,10 +41,9 @@ class Init {
 				if (null != viewInject) {
 					field.setAccessible(true);
 					int id = viewInject.id();
-					if (id == 0) {
-						id=viewInject.value();
+					if (id != 0) {
+						initView(activity, field, id);
 					}
-					initView(activity, field, id);
 					String clickMethod = viewInject.click();
 					if (!TextUtils.isEmpty(clickMethod))
 						setViewClickListener(activity, field, clickMethod);

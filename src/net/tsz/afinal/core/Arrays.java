@@ -15,7 +15,7 @@
  *  limitations under the License.
  */
 
-package net.tsz.afinal.common;
+package net.tsz.afinal.core;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;

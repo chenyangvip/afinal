@@ -28,7 +28,5 @@ public @interface ViewInject {
 	public String longClick() default "";
 	public String itemClick() default "";
 	public String itemLongClick() default "";
-	public abstract int value() default 0;
-	public abstract String resName() default "";
 	public Select select() default @Select(selected="") ;
 }

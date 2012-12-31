@@ -4,7 +4,7 @@
  * at http://creativecommons.org/licenses/publicdomain
  */
 
-package net.tsz.afinal.common;
+package net.tsz.afinal.core;
 
 import java.util.Iterator;
 

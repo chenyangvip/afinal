@@ -3,7 +3,7 @@
  * as explained at http://creativecommons.org/licenses/publicdomain.
  */
 
-package net.tsz.afinal.common;
+package net.tsz.afinal.core;
 
 // BEGIN android-note
 // removed link to collections framework docs
