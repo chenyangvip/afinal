@@ -34,10 +34,11 @@ import org.apache.http.impl.client.AbstractHttpClient;
 import org.apache.http.protocol.HttpContext;
 
 import android.os.SystemClock;
+import android.util.Log;
 
 
 public class  AjaxRequestHandler extends  AsyncTask<Object, Object, Object> {
-
+	private static final String TAG="AjaxRequestHandler";
 	private final AbstractHttpClient client;
 	private final HttpContext context;
 	
@@ -135,7 +136,15 @@ public class  AjaxRequestHandler extends  AsyncTask<Object, Object, Object> {
 			break;
 		case Update_success:
 			if(callback!=null)
-				callback.onSuccess(values[1]);
+				if(values[1] instanceof String){
+					String returnBack=(String)values[1];
+					if(!(returnBack.toLowerCase().contains("<html>")||returnBack.toLowerCase().contains("<body>"))){
+						callback.onSuccess(values[1]);
+					}else{
+						callback.onFailure(new Throwable("Donn't support text"),"not started with { or {[");
+					}
+				}
+				
 			break;
 		case Update_end:
 			if(null!=callback){

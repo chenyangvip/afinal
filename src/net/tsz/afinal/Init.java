@@ -15,12 +15,17 @@ package net.tsz.afinal;
  * limitations under the License.
  */
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import net.tsz.afinal.annotation.view.EventListener;
 import net.tsz.afinal.annotation.view.Select;
 import net.tsz.afinal.annotation.view.ViewInject;
 import net.tsz.afinal.util.Arrays;
 import android.app.Activity;
+import android.content.res.Resources;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.AbsListView;
@@ -36,9 +41,10 @@ class Init {
 				if (null != viewInject) {
 					field.setAccessible(true);
 					int id = viewInject.id();
-					if (id != 0) {
-						initView(activity, field, id);
+					if (id == 0) {
+						id=viewInject.value();
 					}
+					initView(activity, field, id);
 					String clickMethod = viewInject.click();
 					if (!TextUtils.isEmpty(clickMethod))
 						setViewClickListener(activity, field, clickMethod);
@@ -65,15 +71,6 @@ class Init {
 			}
 		}
 	}
-
-	private static void initView(Activity activity, Field field, int id) {
-		try {
-			field.set(activity, activity.findViewById(id));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
 	private static void setViewClickListener(Activity activity, Field field,
 			String clickMethod) {
 		try {
@@ -140,5 +137,64 @@ class Init {
 			e.printStackTrace();
 		}
 	}
+	private static void initView(Activity activity, Field field, int id) {
+		try {
+			if (id != 0) {
+				field.setAccessible(true);
+				field.set(activity, activity.findViewById(id));
+			} else {
+				String fieldName = field.getName();
+				List<String> names = getPosiableNameOfId(fieldName);
+				if (!Arrays.isEmpty(names)) {
+					for (String name : names) {
+						id = nameToId(name, activity);
+						if (0 != id) {
+							field.setAccessible(true);
+							field.set(activity, activity.findViewById(id));
+							break;
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
+	private static int nameToId(String name, Activity activity) {
+		int id = 0;
+		Resources res = activity.getResources();
+		id = res.getIdentifier(name, "id", activity.getPackageName());
+		return id;
+	}
+
+	/**
+	 * Get all posiable name of View's id
+	 * @param fieldName
+	 * @return
+	 */
+	private static List<String> getPosiableNameOfId(String fieldName) {
+		List<String> posiableNames = new ArrayList<String>();
+		posiableNames.add(fieldName);
+		String temp = "";
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < fieldName.length(); i++) {
+			char a = fieldName.charAt(i);
+			temp = String.valueOf(a);
+			if (temp.toUpperCase().equals(temp) && isCharacter(a)) {
+				sb.append("_");
+				sb.append(temp.toLowerCase());
+			} else {
+				sb.append(a);
+			}
+		}
+		posiableNames.add(sb.toString());
+		return posiableNames;
+	}
+
+	private static boolean isCharacter(char a) {
+		Pattern pattern = Pattern.compile("[a-z]|[A-Z]");
+		Matcher matcher = pattern.matcher(String.valueOf(a));
+		return matcher.matches();
+	}
 }
