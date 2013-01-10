@@ -22,6 +22,7 @@ import net.tsz.afinal.bitmap.download.Downloader;
 import net.tsz.afinal.core.FileNameGenerator;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 
 public class BitmapProcess {
@@ -35,7 +36,12 @@ public class BitmapProcess {
 	private static final int DISK_CACHE_INDEX = 0;
 
 	private Downloader downloader;
+<<<<<<< HEAD
 	private Context mContext;
+=======
+	
+	private boolean neverCalculate = false;
+>>>>>>> e98e1925de374f757d390a892f1a26b4dee90e7c
 
 	public BitmapProcess(Context context, Downloader downloader, int cacheSize) {
 		this.mContext = context;
@@ -43,6 +49,10 @@ public class BitmapProcess {
 		if (cacheSize <= 0)
 			cacheSize = DEFAULT_CACHE_SIZE;
 		this.cacheSize = cacheSize;
+	}
+	
+	public void configCalculateBitmap(boolean neverCalculate){
+		this.neverCalculate = neverCalculate;
 	}
 
 	public Bitmap processBitmap(String data, BitmapDisplayConfig config) {
@@ -74,6 +84,22 @@ public class BitmapProcess {
 			}
 		}
 
+<<<<<<< HEAD
+=======
+		Bitmap bitmap = null;
+		if (fileDescriptor != null) {
+			if(neverCalculate)
+				bitmap = BitmapFactory.decodeFileDescriptor(fileDescriptor);
+			else
+				bitmap = BitmapDecoder.decodeSampledBitmapFromDescriptor(fileDescriptor, config.getBitmapWidth(),config.getBitmapHeight());
+		}
+		if (fileInputStream != null) {
+			try {
+				fileInputStream.close();
+			} catch (IOException e) {
+			}
+		}
+>>>>>>> e98e1925de374f757d390a892f1a26b4dee90e7c
 		return bitmap;
 	}
 

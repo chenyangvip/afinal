@@ -23,9 +23,15 @@ import java.util.List;
 import net.tsz.afinal.db.sqlite.CursorUtils;
 import net.tsz.afinal.db.sqlite.DbModel;
 import net.tsz.afinal.db.sqlite.SqlBuilder;
+<<<<<<< HEAD
+=======
+import net.tsz.afinal.db.sqlite.SqlInfo;
+import net.tsz.afinal.db.table.KeyValue;
+>>>>>>> e98e1925de374f757d390a892f1a26b4dee90e7c
 import net.tsz.afinal.db.table.ManyToOne;
 import net.tsz.afinal.db.table.OneToMany;
 import net.tsz.afinal.db.table.TableInfo;
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -126,8 +132,9 @@ public class FinalDb {
 	}
 	
 
+	
 	/**
-	 * 保存数据库
+	 * 保存数据库，速度要比save快
 	 * @param entity
 	 */
 	public void save(Object entity){
@@ -135,6 +142,46 @@ public class FinalDb {
 		String saveSQL = SqlBuilder.getInsertSQL(entity);
 		debugSql(saveSQL);
 		db.execSQL(saveSQL);
+	}
+	
+	
+	/**
+	 * 保存数据到数据库<br />
+	 * <b>注意：</b><br />
+	 * 保存成功后，entity的主键将被赋值（或更新）为数据库的主键， 只针对自增长的id有效
+	 * @param entity 要保存的数据
+	 * @return  ture： 保存成功    false:保存失败
+	 */
+	public boolean saveBindId(Object entity){
+		checkTableExist(entity.getClass());
+		List<KeyValue> entityKvList = SqlBuilder.getSaveKeyValueListByEntity(entity);
+		if(entityKvList != null && entityKvList.size() > 0){
+			TableInfo tf = TableInfo.get(entity.getClass());
+			ContentValues cv = new ContentValues();
+			insertContentValues(entityKvList,cv);
+			Long id = db.insert(tf.getTableName(), null, cv);
+			if(id == -1)
+				return false;
+			tf.getId().setValue(entity, id);
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * 把List<KeyValue>数据存储到ContentValues
+	 * @param list
+	 * @param cv
+	 */
+	private void insertContentValues(List<KeyValue> list , ContentValues cv){
+		if(list!=null && cv!=null){
+			for(KeyValue kv : list){
+				cv.put(kv.getKey(), kv.getValue().toString());
+			}
+		}else{
+			Log.w(TAG, "insertContentValues: List<KeyValue> is empty or ContentValues is empty!");
+		}
+		
 	}
 	
 	/**

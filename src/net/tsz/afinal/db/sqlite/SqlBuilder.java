@@ -38,38 +38,12 @@ public class SqlBuilder {
 	 */
 	public static String getInsertSQL(Object entity){
 		
-		TableInfo table=TableInfo.get(entity.getClass());
-		
-		Object idvalue = table.getId().getValue(entity);
-		
-		List<KeyValue> keyValueList = new ArrayList<KeyValue>();
-		
-		if(!(idvalue instanceof Integer)){ //用了非自增长,添加id , 采用自增长就不需要添加id了
-			if(idvalue instanceof String && idvalue != null){
-				KeyValue kv = new KeyValue(table.getId().getColumn(),idvalue);
-				keyValueList.add(kv);
-			}
-		}
-		
-		//添加属性
-		Collection<Property> propertys = table.propertyMap.values();
-		for(Property property : propertys){
-			KeyValue kv = property2KeyValue(property,entity) ;
-			if(kv!=null)
-				keyValueList.add(kv);
-		}
-		
-		//添加外键（多对一）
-		Collection<ManyToOne> manyToOnes = table.manyToOneMap.values();
-		for(ManyToOne many:manyToOnes){
-			KeyValue kv = manyToOne2KeyValue(many,entity);
-			if(kv!=null) keyValueList.add(kv);
-		}
+		List<KeyValue> keyValueList = getSaveKeyValueListByEntity(entity);
 		
 		StringBuffer strSQL=new StringBuffer();
 		if(keyValueList!=null && keyValueList.size()>0){
 			strSQL.append("INSERT INTO ");
-			strSQL.append(table.getTableName());
+			strSQL.append(TableInfo.get(entity.getClass()).getTableName());
 			strSQL.append(" (");
 			for(KeyValue kv : keyValueList){
 				strSQL.append(kv.getKey()).append(",");
@@ -93,6 +67,37 @@ public class SqlBuilder {
 		return strSQL.toString();
 	}
 	
+	public static List<KeyValue> getSaveKeyValueListByEntity(Object entity){
+		
+		List<KeyValue> keyValueList = new ArrayList<KeyValue>();
+		
+		TableInfo table=TableInfo.get(entity.getClass());
+		Object idvalue = table.getId().getValue(entity);
+		
+		if(!(idvalue instanceof Integer)){ //用了非自增长,添加id , 采用自增长就不需要添加id了
+			if(idvalue instanceof String && idvalue != null){
+				KeyValue kv = new KeyValue(table.getId().getColumn(),idvalue);
+				keyValueList.add(kv);
+			}
+		}
+		
+		//添加属性
+		Collection<Property> propertys = table.propertyMap.values();
+		for(Property property : propertys){
+			KeyValue kv = property2KeyValue(property,entity) ;
+			if(kv!=null)
+				keyValueList.add(kv);
+		}
+		
+		//添加外键（多对一）
+		Collection<ManyToOne> manyToOnes = table.manyToOneMap.values();
+		for(ManyToOne many:manyToOnes){
+			KeyValue kv = manyToOne2KeyValue(many,entity);
+			if(kv!=null) keyValueList.add(kv);
+		}
+		
+		return keyValueList;
+	}
 	
 	private static String getDeleteSqlBytableName(String tableName){
 		return "DELETE FROM "+ tableName;
